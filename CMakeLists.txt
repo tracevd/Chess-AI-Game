@@ -7,17 +7,42 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 project(chess_ai)
 
+# Generate compile_commands.json
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Dependencies
+set(RAYLIB_VERSION 5.5)
+find_package(raylib ${RAYLIB_VERSION} QUIET) # QUIET or REQUIRED
+if (NOT raylib_FOUND) # If there's none, fetch and build raylib
+  include(FetchContent)
+  FetchContent_Declare(
+    raylib
+    DOWNLOAD_EXTRACT_TIMESTAMP OFF
+    URL https://github.com/raysan5/raylib/archive/refs/tags/${RAYLIB_VERSION}.tar.gz
+  )
+  FetchContent_GetProperties(raylib)
+  if (NOT raylib_POPULATED) # Have we downloaded raylib yet?
+    set(FETCHCONTENT_QUIET NO)
+    FetchContent_MakeAvailable(raylib)
+    set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # don't build the supplied examples
+  endif()
+endif()
+
 file(GLOB_RECURSE SRC "src/*.h" "src/*.cpp")
 
 add_executable(${PROJECT_NAME} ${SRC})
 
-find_package(SDL3 REQUIRED)
-find_package(SDL3_image REQUIRED)
+target_link_libraries(${PROJECT_NAME} raylib)
 
-target_include_directories(${PROJECT_NAME} PUBLIC ${SDL3_INCLUDE_DIRS} ${SDL3IMAGE_INCLUDE_DIRS})
+# Web Configurations
+if (${PLATFORM} STREQUAL "Web")
+    set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html") # Tell Emscripten to build an example.html file.
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s USE_GLFW=3 -s ASSERTIONS=1 -s WASM=1 -s ASYNCIFY -s GL_ENABLE_GET_PROC_ADDRESS=1")
+endif()
 
-if (WIN32)
-    target_link_libraries(${PROJECT_NAME} PUBLIC ${SDL3_LIBRARIES} SDL3_image::SDL3_image mingw32)
-else()
-    target_link_libraries(${PROJECT_NAME} PUBLIC ${SDL3_LIBRARIES} SDL3_image::SDL3_image)
+# Checks if OSX and links appropriate frameworks (Only required on MacOS)
+if (APPLE)
+    target_link_libraries(${PROJECT_NAME} "-framework IOKit")
+    target_link_libraries(${PROJECT_NAME} "-framework Cocoa")
+    target_link_libraries(${PROJECT_NAME} "-framework OpenGL")
 endif()

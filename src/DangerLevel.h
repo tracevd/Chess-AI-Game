@@ -13,7 +13,7 @@ namespace danger
             // see if any pieces are one move away from the piece
             auto const isOneMoveAway = []( const Piece* board, move::Iterator& move_it, Vec2 pieceCoords, bool pieceIsAi )
             {
-                auto const newCoords = pieceCoords + move_it.next();
+                auto const newCoords = pieceCoords - move_it.next();
 
                 if ( board::isOutOfBounds( newCoords ) )
                 {

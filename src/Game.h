@@ -27,7 +27,7 @@ struct AiData
     std::mutex mutex;
     std::thread thread;
     ai::Result result;
-    uint64_t whenToMakeMove;
+    float whenToMakeMove;
     Highlight originalPosition = { Highlight::NoPieceSelected, color::Blue };
     Highlight newPosition = { Highlight::NoPieceSelected, color::Green };
     ai::Difficulty difficulty = ai::Difficulty::Hard;
@@ -119,7 +119,7 @@ struct Game
         });
     }
 
-    void update( uint64_t sdlTicks )
+    void update( float frameTime )
     {
         if ( state == State::AiChooseMove )
         {
@@ -129,7 +129,7 @@ struct Game
             {
                 state = State::AiMakeMove;
 
-                ai.whenToMakeMove = sdlTicks + 1500;
+                ai.whenToMakeMove = 1.5;
 
                 ai.originalPosition.index = board::coordsToIndex( ai.result.move.from );
                 ai.newPosition.index = board::coordsToIndex( ai.result.move.dst );
@@ -140,7 +140,8 @@ struct Game
         }
         else if ( state == State::AiMakeMove )
         {
-            if ( ai.whenToMakeMove <= sdlTicks )
+            ai.whenToMakeMove -= frameTime;
+            if ( ai.whenToMakeMove <= 0 )
             {
                 board::movePiece( board.data(), ai.result.move.from, ai.result.move.dst );
                 ai.result.ready = false;
@@ -153,7 +154,7 @@ struct Game
         kingDangerLevel = getKingDangerLevel();
     }
 
-    void render( SDL_Renderer* r, SDL_Texture* t ) const
+    void render( Texture t ) const
     {
         for ( Coord j = 0; j < 8; ++j )
         {
@@ -163,22 +164,19 @@ struct Game
                 auto const index = board::coordsToIndex( coords );
                 auto const piece = board[ index ];
 
-                renderCheckerBoardAt( r, coords, index, piece );
-                renderGamePieceAt( r, t, coords, piece );
+                renderCheckerBoardAt( coords, index, piece );
+
+                if ( !piece.isNull() )
+                    renderGamePieceAt( t, coords, piece );
             }
         }
     }
 private:
-    static void setRenderDrawColor( SDL_Renderer* r, RGB color )
-    {
-        SDL_SetRenderDrawColor( r, color.r, color.g, color.b, 255 );
-    }
-
-    void renderCheckerBoardAt( SDL_Renderer* r, Vec2 coords, int16_t index, Piece piece ) const
+    void renderCheckerBoardAt( Vec2 coords, int16_t index, Piece piece ) const
     {
         auto const isBlack = (coords.j & 1) ? !(coords.i & 1) : !!(coords.i & 1);
 
-        RGB color;
+        Color color;
 
         // make king red if in danger
         if ( piece.isUser() && piece.type == piece::Type::King && kingDangerLevel != danger::Level::None )
@@ -211,20 +209,18 @@ private:
             color = ai.newPosition.color;
         }
 
-        setRenderDrawColor( r, color );
-
         auto const rect = window::getBoxPosition( coords );
 
-        SDL_RenderFillRect( r, &rect );
+        DrawRectangle( rect.x, rect.y, rect.width, rect.height, color );
     }
 
-    void renderGamePieceAt( SDL_Renderer* r, SDL_Texture* t, Vec2 coords, Piece piece ) const
+    void renderGamePieceAt( Texture t, Vec2 coords, Piece piece ) const
     {
         auto const imgCrop = piece::getImageCrop( piece );
 
         auto const imgPos = window::getBoxPosition( coords );
 
-        SDL_RenderTexture( r, t, &imgCrop, &imgPos );
+        DrawTexturePro( t, imgCrop, imgPos, {0, 0}, 0, WHITE );
     }
 
     bool isValidMove( Vec2 from, Vec2 dst )
@@ -243,14 +239,15 @@ private:
         // handle pawn separately
         if ( pieceToBeMoved.type == piece::Type::Pawn )
         {
+            auto const dstIsEmpty = pieceToBeCaptured.type == piece::Type::Null;
+
             auto const isMovingUpTwo = from + move::Up * 2 == dst;
 
-            if ( board::isPawnStartingPosition( fromIdx ) && isMovingUpTwo )
+            if ( dstIsEmpty && board::isPawnStartingPosition( fromIdx ) && isMovingUpTwo )
             {
                 return true;
             }
 
-            auto const dstIsEmpty = pieceToBeCaptured.type == piece::Type::Null;
             auto const isMovingUpOne = from + move::Up == dst;
 
             if ( dstIsEmpty && isMovingUpOne )

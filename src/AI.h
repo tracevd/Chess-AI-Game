@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <string>
 
+#include <raylib.h>
+
 #include "Vec2.h"
 
 namespace ai
@@ -259,7 +261,7 @@ namespace ai
     void makeMove( Piece const* b, std::mutex& m, Result& res, Difficulty difficulty )
     {
         nodesGenerated = 0;
-        auto const ticksBefore = SDL_GetTicks();
+        auto const timeBefore = GetTime();
 
         std::array< Piece, 64 > b_arr;
 
@@ -267,15 +269,13 @@ namespace ai
 
         auto const bestMove = details::miniMax< Move >( b_arr.data(), static_cast< int >( difficulty ), true );
 
-        auto const ticksAfter = SDL_GetTicks();
+        auto const timeAfter = GetTime();
 
         auto lock = std::scoped_lock< std::mutex >( m );
 
         res = Result{ bestMove, true };
 
-        std::cout << "Took ";
-        printNumberWithCommas( ticksAfter - ticksBefore );
-        std::cout << "ms to generate ";
+        std::cout << "Took " << timeAfter - timeBefore << "s to generate ";
         printNumberWithCommas( nodesGenerated );
         std::cout << " nodes\n";
     }

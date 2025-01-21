@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+#include <raylib.h>
+
 struct RGB
 {
     uint8_t r = 0;
@@ -11,13 +13,13 @@ struct RGB
 
 namespace color
 {
-    constexpr RGB Red   = { 180,  20,  60 };
-    constexpr RGB Green = {  20, 180,  60 };
-    constexpr RGB Blue  = {  20,  60, 180 };
-    constexpr RGB Black = {  20,  20,  20 };
-    constexpr RGB White = { 235, 235, 235 };
+    constexpr Color Red   = { 180,  20,  60, 255 };
+    constexpr Color Green = {  20, 180,  60, 255 };
+    constexpr Color Blue  = {  20,  60, 180, 255 };
+    constexpr Color Black = {  20,  20,  20, 255 };
+    constexpr Color White = { 235, 235, 235, 255 };
 
-    constexpr RGB DarkRed = { 90, 10, 30 };
+    constexpr Color DarkRed = { 90, 10, 30, 255 };
 }
 
 struct Highlight
@@ -25,5 +27,5 @@ struct Highlight
     static constexpr int16_t NoPieceSelected = -1;
 
     int16_t index = NoPieceSelected;
-    RGB color;
+    Color color;
 };

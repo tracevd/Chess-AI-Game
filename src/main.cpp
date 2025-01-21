@@ -1,7 +1,6 @@
 #include <iostream>
 
-#include <SDL3/SDL.h>
-#include <SDL3_image/SDL_image.h>
+#include <raylib.h>
 
 #include "Game.h"
 #include "Input.h"
@@ -11,93 +10,41 @@
 
 int main( int, char** )
 {
-    if ( !SDL_Init( SDL_INIT_VIDEO ) )
-    {
-        std::cout << "Failed to initialize SDL\n";
-        return -1;
-    }
+    InitWindow( window::Width, window::Height, window::Title );
 
-    SDL_Window* window {};
-    SDL_Renderer* renderer {};
+    SetWindowMaxSize( window::Width, window::Height );
+    SetWindowMinSize( window::Width, window::Height );
 
-    if ( !SDL_CreateWindowAndRenderer( window::Title, window::Width, window::Height, 0, &window, &renderer ) )
-    {
-        std::cout << "Couldn't create window and renderer\n";
-        return -1;
-    }
-
-    SDL_SetWindowResizable( window, false );
+    SetTargetFPS( 60 );
     
-    SDL_Texture* pieces = nullptr;
-    
-    {
-        SDL_Surface* img = IMG_Load("../img/pieces.png");
-
-        if ( !img )
-        {
-            std::cout << "Could not load pieces png\n";
-            return 37;
-        }
-
-        pieces = SDL_CreateTextureFromSurface(renderer, img);
-        SDL_DestroySurface( img );
-
-        if ( !pieces )
-        {
-            std::cout << "Could not create texture from surface\n";
-            return 43;
-        }
-    }
+    auto pieces = LoadTexture( "../img/pieces.png" );
 
     Game game;
 
     game.state = State::UserMakeMove;
 
-    uint32_t lastTicks = 0;
-
-    while ( true )
+    while ( !WindowShouldClose() )
     {
-        auto const ticks = SDL_GetTicks();
-        auto const timeDelta = ticks - lastTicks;
-
-        if ( timeDelta < 1000 / 60 )
-            continue;
-
-        lastTicks = ticks;
-
         processInput( game );
 
-        auto inputTicks = SDL_GetTicks();
+        auto frameTime = GetFrameTime();
 
         if ( game.state == State::Quit )
 	        break;
 
-        game.update( inputTicks );
+        game.update( frameTime );
 
-        auto updateTicks = SDL_GetTicks();
+        BeginDrawing();
 
-        SDL_SetRenderDrawColor( renderer, 0, 0, 0, 255 );
-        SDL_RenderClear( renderer );
+        ClearBackground( SKYBLUE );
 
-        game.render( renderer, pieces );
+        game.render( pieces );
 
-        SDL_RenderPresent( renderer );
-
-        auto renderTicks = SDL_GetTicks();
-
-        renderTicks -= updateTicks;
-        updateTicks -= inputTicks;
-        inputTicks -= ticks;
-
-        // std::cout << "Input processing took: " << inputTicks << "ms\n";
-        // std::cout << "Updating game took:    " << updateTicks << "ms\n";
-        // std::cout << "Rendering game took:   " << renderTicks << "ms\n";
+        EndDrawing();
     }
 
-    SDL_DestroyTexture( pieces );
-    SDL_DestroyRenderer( renderer );
-    SDL_DestroyWindow( window );
-    SDL_Quit();
+    UnloadTexture( pieces );
+    CloseWindow();
 
     return 0;
 }

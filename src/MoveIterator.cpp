@@ -70,7 +70,7 @@ namespace move
 
         auto const vec = m_cur->direction * m_distance;
 
-        if ( m_cur->maxDistance <= m_distance )
+        if (m_distance >= m_cur->maxDistance )
         {
             ++m_cur;
             m_distance = 0;
@@ -81,7 +81,7 @@ namespace move
 
     void Iterator::skipToNextDirection()
     {
-        if ( m_distance != m_cur->maxDistance - 1 )
+        if ( m_cur != m_end && m_distance > 0 )
         {
             ++m_cur;
             m_distance = 0;

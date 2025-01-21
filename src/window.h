@@ -1,6 +1,6 @@
 #pragma once
 
-#include <SDL3/SDL.h>
+#include <raylib.h>
 
 #include "Vec2.h"
 
@@ -12,15 +12,15 @@ namespace window
 
     namespace box
     {
-        constexpr SDL_FRect PositionRect = {
+        constexpr Rectangle PositionRect = {
             .x = 0,
             .y = 0,
-            .w = window::Width / 8,
-            .h = window::Height / 8
+            .width = window::Width / 8,
+            .height = window::Height / 8
         };
     }
 
-    constexpr SDL_FRect getBoxPosition( Vec2 coords )
+    constexpr Rectangle getBoxPosition( Vec2 coords )
     {
         auto boxPos = box::PositionRect;
 

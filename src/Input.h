@@ -4,42 +4,38 @@
 
 void processInput( Game& game )
 {
-    SDL_Event e;
-    while ( SDL_PollEvent( &e ) )
+    if ( game.state != State::UserMakeMove )
     {
-        if ( e.type == SDL_EVENT_QUIT )
+        return;
+    }
+
+    auto const clicked = IsMouseButtonPressed( MOUSE_BUTTON_LEFT );
+
+    if ( !clicked )
+        return;
+
+    auto const mousePos = GetMousePosition();
+
+    auto const coords = board::windowCoordsToBoardCoords( mousePos.x, mousePos.y );
+
+    if ( game.hasSelectedPiece() )
+    {
+        if ( !game.tryMovePiece( coords ) )
+        {
+            return;
+        }
+
+        if ( game.aiHasLost() )
         {
             game.state = State::Quit;
-            return;
         }
-
-        if ( game.state != State::UserMakeMove )
-            return;
-
-        if ( e.type == SDL_EVENT_MOUSE_BUTTON_DOWN )
+        else
         {
-            auto const coords = board::windowCoordsToBoardCoords( e.button.x, e.button.y );
-
-            if ( game.hasSelectedPiece() )
-            {
-                if ( !game.tryMovePiece( coords ) )
-                {
-                    continue;
-                }
-
-                if ( game.aiHasLost() )
-                {
-                    game.state = State::Quit;
-                }
-                else
-                {
-                    game.startAiMove();
-                }
-            }
-            else if ( !game.trySelectPiece( coords ) )
-            {
-                std::cout << "Piece at " << coords << " can't be selected\n";
-            }
+            game.startAiMove();
         }
+    }
+    else if ( !game.trySelectPiece( coords ) )
+    {
+        std::cout << "Piece at " << coords << " can't be selected\n";
     }
 }

@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include <SDL3/SDL.h>
+#include <raylib.h>
 
 #include "image.h"
 
@@ -35,18 +35,18 @@ struct Piece
 
 namespace piece
 {
-    constexpr SDL_FRect BlackImageRect = {
+    constexpr Rectangle BlackImageRect = {
         .x = 0,
         .y = image::crop::Height,
-        .w = image::crop::Width,
-        .h = image::crop::Height
+        .width = image::crop::Width,
+        .height = image::crop::Height
     };
 
-    constexpr SDL_FRect WhiteImageRect = {
+    constexpr Rectangle WhiteImageRect = {
         .x = 0,
         .y = 0,
-        .w = image::crop::Width,
-        .h = image::crop::Height
+        .width = image::crop::Width,
+        .height = image::crop::Height
     };
 
     constexpr int getImageCropX( piece::Type t )
@@ -54,7 +54,7 @@ namespace piece
         return static_cast< int >( t ) * image::crop::Width;
     }
 
-    constexpr SDL_FRect getImageCrop( Piece p )
+    constexpr Rectangle getImageCrop( Piece p )
     {
         auto imgCrop = p.isBlack ? BlackImageRect : WhiteImageRect;
         imgCrop.x = getImageCropX( p.type );
