@@ -5,8 +5,6 @@
 #include "Game.h"
 #include "Input.h"
 
-#include "bitboard/bitboard.h"
-
 
 int main( int, char** )
 {
