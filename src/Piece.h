@@ -33,6 +33,11 @@ struct Piece
     constexpr bool isNull() const { return type == piece::Type::Null; }
 };
 
+constexpr bool operator==( Piece p1, Piece p2 )
+{
+    return p1.isBlack == p2.isBlack && p1.type == p2.type;
+}
+
 namespace piece
 {
     constexpr Rectangle BlackImageRect = {

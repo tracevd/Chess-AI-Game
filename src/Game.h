@@ -12,6 +12,8 @@
 #include "AI.h"
 #include "Highlight.h"
 #include "DangerLevel.h"
+#include "Button.h"
+#include "Header.h"
 
 enum class State : uint8_t
 {
@@ -19,7 +21,9 @@ enum class State : uint8_t
     AiChooseMove,
     AiMakeMove,
     UserMakeMove,
-    MainMenu
+    MainMenu,
+    UserWins,
+    AiWins
 };
 
 struct AiData
@@ -37,9 +41,50 @@ struct Game
 {
     std::array< Piece, 64 > board = board::init::DefaultBoard;
     AiData ai;
+    Button startGameButton;
+    Button quitButton;
+    Button playAgainButton;
+    Header endOfGameHeader;
     Highlight selectedPiece = { Highlight::NoPieceSelected, color::Blue };
     State state = State::MainMenu;
     danger::Level kingDangerLevel = danger::Level::None;
+
+    Game()
+    {
+        constexpr int ButtonWidth = 200;
+        constexpr int ButtonHeight = 60;
+
+        constexpr Rectangle centerRect = {
+            .x = window::Width / 2 - ButtonWidth / 2,
+            .y = window::Height / 2,
+            .width = ButtonWidth,
+            .height = ButtonHeight
+        };
+
+        startGameButton = { centerRect, "Start Game" };
+
+        startGameButton.box.y -= 100;
+
+        playAgainButton = { startGameButton.box, "Play Again" };
+
+        playAgainButton.box.y += 50;
+
+        quitButton = { centerRect, "Quit" };
+
+        quitButton.box.y += 50;
+
+        endOfGameHeader = { centerRect };
+
+        endOfGameHeader.box.y -= 150;
+    }
+
+    void reset()
+    {
+        state = State::MainMenu;
+        board = board::init::DefaultBoard;
+        kingDangerLevel = danger::Level::None;
+        selectedPiece = { Highlight::NoPieceSelected, color::Blue };
+    }
 
     bool hasSelectedPiece() const
     {
@@ -78,33 +123,18 @@ struct Game
             return false;
         }
 
-        board::movePiece( board.data(), selectedPiece.index, index );
+        auto const [_, pieceCaptured, __] = board::movePiece( board.data(), selectedPiece.index, index );
         selectedPiece.index = Highlight::NoPieceSelected;
 
-        return true;
-    }
+        auto const killedKing = pieceCaptured.isAi() && pieceCaptured.type == piece::Type::King;
 
-    bool aiHasLost()
-    {
-        for ( int i = 0; i < 64; ++i )
+        if ( killedKing )
         {
-            auto const piece = board[ i ];
-
-            if ( piece.isAi() && piece.type == piece::Type::King )
-                return false;
+            state = State::UserWins;
         }
-
-        return true;
-    }
-
-    bool userHasLost()
-    {
-        for ( int i = 0; i < 64; ++i )
+        else
         {
-            auto const piece = board[ i ];
-
-            if ( piece.isUser() && piece.type == piece::Type::King )
-                return false;
+            startAiMove();
         }
 
         return true;
@@ -143,11 +173,18 @@ struct Game
             ai.whenToMakeMove -= frameTime;
             if ( ai.whenToMakeMove <= 0 )
             {
-                board::movePiece( board.data(), ai.result.move.from, ai.result.move.dst );
+                auto const [_, pieceCaptured, __] = board::movePiece( board.data(), ai.result.move.from, ai.result.move.dst );
                 ai.result.ready = false;
                 ai.originalPosition.index = Highlight::NoPieceSelected;
                 ai.newPosition.index = Highlight::NoPieceSelected;
                 state = State::UserMakeMove;
+
+                auto const killedKing = pieceCaptured.isUser() && pieceCaptured.type == piece::Type::King;
+
+                if ( killedKing )
+                {
+                    state = State::AiWins;
+                }
             }
         }
 
@@ -156,6 +193,13 @@ struct Game
 
     void render( Texture t ) const
     {
+        if ( state == State::MainMenu )
+        {
+            startGameButton.render();
+            quitButton.render();
+            return;
+        }
+
         for ( Coord j = 0; j < 8; ++j )
         {
             for ( Coord i = 0; i < 8; ++i )
@@ -169,6 +213,19 @@ struct Game
                 if ( !piece.isNull() )
                     renderGamePieceAt( t, coords, piece );
             }
+        }
+
+        if ( state == State::UserWins || state == State::AiWins )
+        {
+            auto const userWins = state == State::UserWins;
+
+            auto color = WHITE;
+            color.a = 156;
+            DrawRectangle( 0, 0, window::Width, window::Height, color );
+
+            playAgainButton.render();
+            quitButton.render();
+            endOfGameHeader.render( userWins ? "You win!" : "Ai wins!" );
         }
     }
 private:

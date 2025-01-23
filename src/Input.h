@@ -4,11 +4,9 @@
 
 void processInput( Game& game )
 {
-    if ( game.state != State::UserMakeMove )
-    {
+    if ( game.state == State::AiChooseMove || game.state == State::AiMakeMove )
         return;
-    }
-
+    
     auto const clicked = IsMouseButtonPressed( MOUSE_BUTTON_LEFT );
 
     if ( !clicked )
@@ -18,24 +16,38 @@ void processInput( Game& game )
 
     auto const coords = board::windowCoordsToBoardCoords( mousePos.x, mousePos.y );
 
-    if ( game.hasSelectedPiece() )
+    if ( game.state == State::UserMakeMove )
     {
-        if ( !game.tryMovePiece( coords ) )
+        if ( game.hasSelectedPiece() )
         {
-            return;
+            game.tryMovePiece( coords );
         }
-
-        if ( game.aiHasLost() )
+        else if ( !game.trySelectPiece( coords ) )
+        {
+            std::cout << "Piece at " << coords << " can't be selected\n";
+        }
+    }
+    else if ( game.state == State::MainMenu )
+    {
+        if ( CheckCollisionPointRec( mousePos, game.startGameButton.box ) )
+        {
+            game.state = State::UserMakeMove;
+        }
+        else if ( CheckCollisionPointRec( mousePos, game.quitButton.box ) )
         {
             game.state = State::Quit;
         }
-        else
-        {
-            game.startAiMove();
-        }
     }
-    else if ( !game.trySelectPiece( coords ) )
+    else if ( game.state == State::AiWins || game.state == State::UserWins )
     {
-        std::cout << "Piece at " << coords << " can't be selected\n";
+        if ( CheckCollisionPointRec( mousePos, game.playAgainButton.box ) )
+        {
+            game.reset();
+            game.state = State::UserMakeMove;
+        }
+        else if ( CheckCollisionPointRec( mousePos, game.quitButton.box ) )
+        {
+            game.state = State::Quit;
+        }
     }
 }

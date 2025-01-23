@@ -44,6 +44,19 @@ namespace board
         return { pieceAtFrom, pieceAtDst, promoteToQueen };
     }
 
+    constexpr bool hasPiece( Piece* board, Piece piece )
+    {
+        for ( int i = 0; i < 64; ++i )
+        {
+            if ( board[ i ] == piece )
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     // Moves the piece at "from" to "dst". Returns the piece originally at "from", the piece that originally at "dst", and whether there was a promotion to queen
     constexpr std::tuple< Piece, Piece, bool > movePiece( Piece* board, Vec2 from, Vec2 dst )
     {

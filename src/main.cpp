@@ -19,8 +19,6 @@ int main( int, char** )
 
     Game game;
 
-    game.state = State::UserMakeMove;
-
     while ( !WindowShouldClose() )
     {
         processInput( game );
