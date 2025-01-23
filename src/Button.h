@@ -4,8 +4,6 @@
 
 #include "text.h"
 
-struct Game;
-
 struct Button
 {
     Rectangle box;
